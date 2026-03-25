@@ -8,15 +8,32 @@ Personal Claude Code plugin marketplace.
 
 Removes trailing whitespace from files edited by Claude Code.
 
-Instead of running on every `Edit`/`Write` (which breaks consecutive edits), it records edited file paths during the response and processes them all at once when Claude stops.
+**Problem:** Running `sed` on every `PostToolUse` changes the file content, which forces Claude to `Read` the file again before the next `Edit`. This breaks consecutive edits and causes Claude to give up or try alternative approaches.
 
-**Hooks:**
+**Solution:** Defer the cleanup to the end of the response. Record file paths during editing, then process them all at once when Claude stops.
 
-| Event | Action |
-|-------|--------|
-| `UserPromptSubmit` | Clear the file list |
-| `PostToolUse` (Write/Edit) | Record the file path |
-| `Stop` / `StopFailure` | Remove trailing whitespace and ensure final newline |
+**Flow:**
+
+```
+User prompt
+  |
+  v
+UserPromptSubmit --- clear /tmp/claude-trailing-ws/{session_id}
+  |
+  v
+Claude editing files...
+  |
+  +-- Edit file A --> PostToolUse --- record path to tmp file
+  +-- Edit file A --> PostToolUse --- record path (no file modification)
+  +-- Edit file B --> PostToolUse --- record path
+  |
+  v
+Stop / StopFailure --- sort -u paths, sed trailing whitespace, ensure final newline
+```
+
+**What it does:**
+- Removes trailing whitespace (`sed 's/[[:space:]]*$//'`)
+- Adds a final newline if missing
 
 ## Installation
 
