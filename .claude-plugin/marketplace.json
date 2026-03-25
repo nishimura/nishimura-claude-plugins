@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "nishimura-claude-plugins",
+  "description": "Personal Claude Code plugins",
+  "owner": {
+    "name": "Satoshi Nishimura",
+    "email": "nishim314@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "trailing-whitespace",
+      "description": "Remove trailing whitespace from edited files at the end of each response",
+      "source": "./plugins/trailing-whitespace",
+      "category": "development"
+    }
+  ]
+}

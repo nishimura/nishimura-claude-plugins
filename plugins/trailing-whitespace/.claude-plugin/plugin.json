@@ -1,0 +1,5 @@
+{
+  "name": "trailing-whitespace",
+  "description": "Remove trailing whitespace from edited files at the end of each response",
+  "version": "1.0.0"
+}
