@@ -9,8 +9,10 @@ fi
 
 sort -u "$LISTFILE" | while read -r file; do
     if [ -f "$file" ]; then
-        # Remove trailing whitespace
-        sed -i 's/[[:space:]]*$//' "$file"
+        # Remove trailing whitespace (only if found)
+        if grep -qP '[[:space:]]+$' "$file"; then
+            sed -i -E 's/[[:space:]]+$//' "$file"
+        fi
         # Add final newline if missing
         if [ "$(tail -c 1 "$file" | wc -l)" -eq 0 ]; then
             echo >> "$file"
