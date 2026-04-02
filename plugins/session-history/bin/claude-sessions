@@ -46,22 +46,8 @@ done | sort -r | if [ "$COUNT" -gt 0 ]; then head -n "$COUNT"; else cat; fi | wh
     FIRST=$(echo "$PERIOD" | sed 's/ ~ .*//')
     LAST=$(echo "$PERIOD" | sed 's/.*~ //')
     printf '%s ~ %s  %s  %s\n' "$LAST" "$FIRST" "$SESSION" "$DIR"
-    FIRST_LINE=$(grep '^❯ ' "$FILE" | head -1 | sed 's/^❯ //')
-    if echo "$FIRST_LINE" | grep -q '^<command-message>'; then
-        FIRST_CMD=$(echo "$FIRST_LINE" | sed 's/.*<command-message>\(.*\)<\/command-message>.*/\1/')
-        FIRST_ARGS=$(grep -A3 "^❯ <command-message>$FIRST_CMD" "$FILE" | grep '<command-args>' | head -1 | sed 's/.*<command-args>\(.*\)<\/command-args>.*/\1/')
-        if [ -n "$FIRST_ARGS" ]; then
-            FIRST_USER="/$FIRST_CMD $FIRST_ARGS"
-        else
-            FIRST_USER="/$FIRST_CMD"
-        fi
-    elif echo "$FIRST_LINE" | grep -q '^<'; then
-        # Skip system tags, use first non-tag message
-        FIRST_USER=$(grep '^❯ ' "$FILE" | grep -v '^❯ <' | head -1 | sed 's/^❯ //' | awk '{print substr($0, 1, 80)}')
-    else
-        FIRST_USER=$(echo "$FIRST_LINE" | awk '{print substr($0, 1, 80)}')
-    fi
-    LAST_USER=$(grep '^❯ ' "$FILE" | tail -1 | sed 's/^❯ //' | awk '{print substr($0, 1, 80)}')
+    FIRST_USER=$(grep '^❯ ' "$FILE" | grep -v -e '^❯ <' -e '^❯ /clear$' | head -1 | sed 's/^❯ //' | awk '{print substr($0, 1, 80)}')
+    LAST_USER=$(grep '^❯ ' "$FILE" | grep -v '^❯ <' | tail -1 | sed 's/^❯ //' | awk '{print substr($0, 1, 80)}')
     LAST_ASST=$(grep '^● ' "$FILE" | tail -1 | sed 's/^● //' | awk '{print substr($0, 1, 80)}')
     [ -n "$FIRST_USER" ] && printf '  ❯ %s\n' "$FIRST_USER"
     [ -n "$FIRST_USER" ] && printf '  %s\n' "..."
