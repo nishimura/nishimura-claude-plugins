@@ -1,0 +1,45 @@
+#!/bin/bash
+# List Claude Code sessions sorted by last activity
+#
+# Usage:
+#   claude-sessions          # List recent 20 sessions
+#   claude-sessions -n 50    # List recent 50 sessions
+#   claude-sessions -a       # List all sessions
+
+LOGDIR="${CLAUDE_SESSION_HISTORY_DIR:-$HOME/.local/share/claude-session-history}/logs"
+
+if [ ! -d "$LOGDIR" ]; then
+    echo "No session history found in $LOGDIR"
+    exit 0
+fi
+
+COUNT=20
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -n) COUNT="$2"; shift 2 ;;
+        -a) COUNT=0; shift ;;
+        -h|--help)
+            echo "Usage: claude-sessions [-n COUNT] [-a]"
+            echo "  -n COUNT  Show last COUNT sessions (default: 20)"
+            echo "  -a        Show all sessions"
+            echo ""
+            echo "Log directory: $LOGDIR"
+            echo "Search logs:   rg 'keyword' $LOGDIR"
+            exit 0
+            ;;
+        *) shift ;;
+    esac
+done
+
+# Extract header info from each file, sort by last activity
+for f in "$LOGDIR"/*.txt; do
+    [ -f "$f" ] || continue
+    HEADER=$(head -4 "$f")
+    SESSION=$(echo "$HEADER" | sed -n 's/^Session: //p')
+    DIR=$(echo "$HEADER" | sed -n 's/^Directory: //p')
+    PERIOD=$(echo "$HEADER" | sed -n 's/^Period: //p')
+    LAST=$(echo "$PERIOD" | sed 's/.*~ //')
+    printf '%s\t%s\t%s\t%s\n' "$LAST" "$DIR" "$SESSION" "$PERIOD"
+done | sort -r | if [ "$COUNT" -gt 0 ]; then head -n "$COUNT"; else cat; fi | while IFS=$'\t' read -r LAST DIR SESSION PERIOD; do
+    printf '%s  %s  %s\n' "$PERIOD" "$DIR" "$SESSION"
+done

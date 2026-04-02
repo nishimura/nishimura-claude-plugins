@@ -1,0 +1,5 @@
+{
+  "name": "session-history",
+  "description": "Save session conversation logs as readable text files for later search and review",
+  "version": "1.0.0"
+}

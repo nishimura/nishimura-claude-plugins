@@ -12,6 +12,12 @@
       "description": "Remove trailing whitespace from edited files at the end of each response",
       "source": "./plugins/trailing-whitespace",
       "category": "development"
+    },
+    {
+      "name": "session-history",
+      "description": "Save session conversation logs as readable text files for later search and review",
+      "source": "./plugins/session-history",
+      "category": "development"
     }
   ]
 }
