@@ -28,11 +28,15 @@ EOF
 jq -r '
   if .type == "user" and .userType == "external" then
     if (.message | type) == "object" and (.message.content | type) == "string" then
-      if (.message.content | test("<command-name>")) then
+      if (.message.content | test("<command-message>")) then
         (.message.content | capture("<command-message>(?<cmd>[^<]+)</command-message>")) as $m |
-        (.message.content | capture("<command-args>(?<args>[^<]*)</command-args>")) as $a |
-        if $a.args != "" then "\n❯ /" + $m.cmd + " " + $a.args + "\n"
-        else "\n❯ /" + $m.cmd + "\n"
+        if (.message.content | test("<command-args>")) then
+          (.message.content | capture("<command-args>(?<args>[^<]*)</command-args>")) as $a |
+          if $a.args != "" then "\n❯ /" + $m.cmd + " " + $a.args + "\n"
+          else "\n❯ /" + $m.cmd + "\n"
+          end
+        else
+          "\n❯ /" + $m.cmd + "\n"
         end
       else
         "\n❯ " + .message.content + "\n"
