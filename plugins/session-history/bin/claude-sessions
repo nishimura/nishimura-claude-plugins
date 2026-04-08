@@ -13,7 +13,16 @@ if [ ! -d "$LOGDIR" ]; then
     exit 0
 fi
 
-COUNT=20
+# ANSI color codes (only when stdout is a terminal)
+if [ -t 1 ]; then
+    HL_START=$'\033[48;5;22m\033[1m'
+    HL_END=$'\033[0m'
+else
+    HL_START=""
+    HL_END=""
+fi
+
+COUNT=10
 GREP_PATTERN=""
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -39,7 +48,7 @@ while [ $# -gt 0 ]; do
         -h|--help)
             echo "Usage: claude-sessions [-g PATTERN] [-n COUNT] [-a] [--remove SESSION_ID]"
             echo "  -g PATTERN          Filter sessions containing PATTERN"
-            echo "  -n COUNT            Show last COUNT sessions (default: 20)"
+            echo "  -n COUNT            Show last COUNT sessions (default: 10)"
             echo "  -a                  Show all sessions"
             echo "  --remove SESSION_ID Remove a session log"
             echo ""
@@ -68,7 +77,7 @@ done | sort -r | if [ "$COUNT" -gt 0 ]; then head -n "$COUNT"; else cat; fi | wh
     PERIOD=$(echo "$HEADER" | sed -n 's/^Period: //p')
     FIRST=$(echo "$PERIOD" | sed 's/ ~ .*//')
     LAST=$(echo "$PERIOD" | sed 's/.*~ //')
-    printf '%s ~ %s  %s  %s\n' "$LAST" "$FIRST" "$SESSION" "$DIR"
+    printf '%s%s ~ %s  %s  %s%s\n' "$HL_START" "$LAST" "$FIRST" "$SESSION" "$DIR" "$HL_END"
     FIRST_USER=$(grep '^❯ ' "$FILE" | grep -v -e '^❯ <' -e '^❯ /clear$' | head -1 | sed 's/^❯ //' | awk '{print substr($0, 1, 80)}')
     LAST_USER=$(grep '^❯ ' "$FILE" | grep -v '^❯ <' | tail -1 | sed 's/^❯ //' | awk '{print substr($0, 1, 80)}')
     LAST_ASST=$(grep '^● ' "$FILE" | tail -1 | sed 's/^● //' | awk '{print substr($0, 1, 80)}')
