@@ -14,8 +14,10 @@ if [ ! -d "$LOGDIR" ]; then
 fi
 
 COUNT=20
+GREP_PATTERN=""
 while [ $# -gt 0 ]; do
     case "$1" in
+        -g|--grep) GREP_PATTERN="$2"; shift 2 ;;
         -n) COUNT="$2"; shift 2 ;;
         -a) COUNT=0; shift ;;
         --remove)
@@ -35,7 +37,8 @@ while [ $# -gt 0 ]; do
             exit 0
             ;;
         -h|--help)
-            echo "Usage: claude-sessions [-n COUNT] [-a] [--remove SESSION_ID]"
+            echo "Usage: claude-sessions [-g PATTERN] [-n COUNT] [-a] [--remove SESSION_ID]"
+            echo "  -g PATTERN          Filter sessions containing PATTERN"
             echo "  -n COUNT            Show last COUNT sessions (default: 20)"
             echo "  -a                  Show all sessions"
             echo "  --remove SESSION_ID Remove a session log"
@@ -51,6 +54,9 @@ done
 # Collect header info with file path, sort by last activity
 for f in "$LOGDIR"/*.txt; do
     [ -f "$f" ] || continue
+    if [ -n "$GREP_PATTERN" ] && ! grep -qi "$GREP_PATTERN" "$f"; then
+        continue
+    fi
     HEADER=$(head -4 "$f")
     PERIOD=$(echo "$HEADER" | sed -n 's/^Period: //p')
     LAST=$(echo "$PERIOD" | sed 's/.*~ //')
