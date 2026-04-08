@@ -42,6 +42,27 @@ EOF
           else
             "\n❯ " + .message.content + "\n"
           end
+        elif (.message | type) == "object" and (.message.content | type) == "array" then
+          .message.content[] |
+          if (type == "object" and .type == "tool_result" and (.content | type) == "string" and (.content | test("^User has answered your questions:"))) then
+            "\n[AskUserQuestion Answer]\n" + (
+              .content
+              | sub("^User has answered your questions: "; "")
+              | split(". You can now continue")[0]
+              | gsub(", \""; "\u0001\"")
+              | split("\u0001")
+              | map(
+                  capture("\"(?<q>[^\"]+)\"=\"(?<a>[^\"]*)\"( user notes: (?<n>.*))?") |
+                  (.q | gsub("\r"; "\n")) as $q |
+                  (.a | gsub("\r"; "\n")) as $a |
+                  ((.n // "") | gsub("\r"; "\n")) as $n |
+                  "  Q: " + $q + "\n  A: " + $a + (if $n != "" then "\n     notes: " + $n else "" end)
+                )
+              | join("\n\n")
+            ) + "\n"
+          else
+            empty
+          end
         else
           empty
         end
@@ -51,21 +72,30 @@ EOF
           if .type == "text" then
             "\n● " + .text + "\n"
           elif .type == "tool_use" then
-            "[" + .name + "] " + (
-              if .name == "Read" or .name == "Edit" or .name == "Write" then
-                .input.file_path // ""
-              elif .name == "Glob" then
-                .input.pattern // ""
-              elif .name == "Grep" then
-                .input.pattern // ""
-              elif .name == "Bash" then
-                (.input.command // "")[:80]
-              elif .name == "Agent" then
-                (.input.description // "")[:60]
-              else
-                (.input | tostring)[:80]
-              end
-            )
+            if .name == "AskUserQuestion" then
+              "[AskUserQuestion]" + (
+                [.input.questions[] |
+                  "\n  Q: " + .question + "\n" +
+                  ([.options[] | "    - " + .label] | join("\n"))
+                ] | join("\n")
+              )
+            else
+              "[" + .name + "] " + (
+                if .name == "Read" or .name == "Edit" or .name == "Write" then
+                  .input.file_path // ""
+                elif .name == "Glob" then
+                  .input.pattern // ""
+                elif .name == "Grep" then
+                  .input.pattern // ""
+                elif .name == "Bash" then
+                  (.input.command // "")[:80]
+                elif .name == "Agent" then
+                  (.input.description // "")[:60]
+                else
+                  (.input | tostring)[:80]
+                end
+              )
+            end
           else
             empty
           end
