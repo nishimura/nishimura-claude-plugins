@@ -28,12 +28,23 @@ Period: 2026-04-01 10:00 ~ 2026-04-02 15:30
 ● More assistant text
 
 ❯ /plugin install foo
+
+[AskUserQuestion]
+  Q: Question text?
+    - Option A
+    - Option B
+
+[AskUserQuestion Answer]
+  Q: Question text?
+  A: Option A
+     notes: user's additional comment
 ```
 
 - User messages: `❯` prefix
 - Assistant text: `●` prefix
 - Tool calls: `[ToolName] argument`
-- Slash commands: converted from XML tags to `❯ /command args` format
+- Slash commands: converted to `❯ /command args` format
+- AskUserQuestion: questions with options, followed by answers with optional notes
 
 ## Logs location
 
@@ -44,18 +55,20 @@ Override with `CLAUDE_SESSION_HISTORY_DIR` env var.
 ## CLI
 
 ```bash
-claude-sessions                    # List recent 20 sessions
-claude-sessions -n 50              # List recent 50 sessions
-claude-sessions -a                 # List all sessions
-claude-sessions -g "keyword"       # Filter sessions containing keyword
-claude-sessions --remove SESSION_ID  # Remove a session log
+claude-sessions                        # List recent 10 sessions
+claude-sessions -n 50                  # List recent 50 sessions
+claude-sessions -a                     # List all sessions
+claude-sessions -g "keyword"           # Filter sessions containing keyword
+claude-sessions -d "ISSUE-123"         # Filter sessions by directory (partial match)
+claude-sessions -d "ISSUE-123" -g "test"  # Combine filters
+claude-sessions --remove SESSION_ID    # Remove a session log
 
 rg 'keyword' ~/.local/share/claude-session-history/logs/   # Search log contents
 ```
 
 ### List output
 
-Each session shows: last active date, first active date, session ID, directory, and a preview of the first user message, last user message, and last assistant response.
+Each session shows: last active date, first active date, session ID, directory, and a preview of the first user message, last user message, and last assistant response. Header lines are highlighted when output is a terminal.
 
 ```
 2026-04-02 15:00 ~ 2026-03-25 10:42  f5f6dda2-...  /home/user/project
@@ -63,6 +76,14 @@ Each session shows: last active date, first active date, session ID, directory, 
   ...
   ❯ Last user message
   ● Last assistant response
+```
+
+### Command mode
+
+The hook script can also be used directly to convert a transcript file:
+
+```bash
+plugins/session-history/scripts/save-session.sh ~/.claude/projects/.../session.jsonl | less
 ```
 
 ## Setup

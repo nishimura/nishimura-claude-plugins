@@ -24,9 +24,11 @@ fi
 
 COUNT=10
 GREP_PATTERN=""
+DIR_PATTERN=""
 while [ $# -gt 0 ]; do
     case "$1" in
         -g|--grep) GREP_PATTERN="$2"; shift 2 ;;
+        -d|--dir) DIR_PATTERN="$2"; shift 2 ;;
         -n) COUNT="$2"; shift 2 ;;
         -a) COUNT=0; shift ;;
         --remove)
@@ -46,8 +48,9 @@ while [ $# -gt 0 ]; do
             exit 0
             ;;
         -h|--help)
-            echo "Usage: claude-sessions [-g PATTERN] [-n COUNT] [-a] [--remove SESSION_ID]"
+            echo "Usage: claude-sessions [-g PATTERN] [-d DIR] [-n COUNT] [-a] [--remove SESSION_ID]"
             echo "  -g PATTERN          Filter sessions containing PATTERN"
+            echo "  -d DIR              Filter sessions by directory (partial match)"
             echo "  -n COUNT            Show last COUNT sessions (default: 10)"
             echo "  -a                  Show all sessions"
             echo "  --remove SESSION_ID Remove a session log"
@@ -67,6 +70,13 @@ for f in "$LOGDIR"/*.txt; do
         continue
     fi
     HEADER=$(head -4 "$f")
+    if [ -n "$DIR_PATTERN" ]; then
+        FILE_DIR=$(echo "$HEADER" | sed -n 's/^Directory: //p')
+        case "$FILE_DIR" in
+            *"$DIR_PATTERN"*) ;;
+            *) continue ;;
+        esac
+    fi
     PERIOD=$(echo "$HEADER" | sed -n 's/^Period: //p')
     LAST=$(echo "$PERIOD" | sed 's/.*~ //')
     printf '%s\t%s\n' "$LAST" "$f"
