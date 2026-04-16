@@ -129,6 +129,11 @@ else
         exit 0
     fi
 
+    # Skip if no user messages (excluding system tags)
+    if ! jq -c 'select(.type == "user" and .userType == "external" and (.message | type) == "object" and (.message.content | type) == "string" and (.message.content | test("^<") | not))' "$TRANSCRIPT_PATH" 2>/dev/null | head -1 | grep -q .; then
+        exit 0
+    fi
+
     OUTDIR="${CLAUDE_SESSION_HISTORY_DIR:-$HOME/.local/share/claude-session-history}/logs"
     mkdir -p "$OUTDIR"
     convert "$TRANSCRIPT_PATH" "$SESSION_ID" "$CWD" > "${OUTDIR}/${SESSION_ID}.txt"
