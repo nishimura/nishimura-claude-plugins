@@ -122,12 +122,14 @@ else
     # Hook mode
     INPUT=$(cat)
     SESSION_ID=$(echo "$INPUT" | jq -r '.session_id')
-    CWD=$(echo "$INPUT" | jq -r '.cwd')
     TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path')
 
     if [ -z "$TRANSCRIPT_PATH" ] || [ ! -f "$TRANSCRIPT_PATH" ]; then
         exit 0
     fi
+
+    # Use launch cwd from transcript (hook's cwd may have been changed by Bash cd)
+    CWD=$(jq -r 'select(.cwd) | .cwd' "$TRANSCRIPT_PATH" | head -1)
 
     # Skip if no user messages (excluding system tags)
     if ! jq -c 'select(.type == "user" and .userType == "external" and (.message | type) == "object" and (.message.content | type) == "string" and (.message.content | test("^<") | not))' "$TRANSCRIPT_PATH" 2>/dev/null | head -1 | grep -q .; then
