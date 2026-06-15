@@ -71,6 +71,8 @@ EOF
           .message.content[] |
           if .type == "text" then
             "\n● " + .text + "\n"
+          elif .type == "thinking" then
+            "\n✻ Thinking\n" + .thinking + "\n"
           elif .type == "tool_use" then
             if .name == "AskUserQuestion" then
               "[AskUserQuestion]" + (
