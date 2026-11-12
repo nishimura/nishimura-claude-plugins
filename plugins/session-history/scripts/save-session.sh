@@ -140,5 +140,32 @@ else
 
     OUTDIR="${CLAUDE_SESSION_HISTORY_DIR:-$HOME/.local/share/claude-session-history}/logs"
     mkdir -p "$OUTDIR"
-    convert "$TRANSCRIPT_PATH" "$SESSION_ID" "$CWD" > "${OUTDIR}/${SESSION_ID}.txt"
+
+    # The Stop hook can fire before the final assistant messages are flushed
+    # to the transcript. Return immediately and convert in the background
+    # once the transcript has stopped growing (stable for 1s, max ~10s).
+    (
+        prev=-1
+        stable=0
+        for _ in $(seq 20); do
+            sleep 0.5
+            cur=$(stat -c %s "$TRANSCRIPT_PATH" 2>/dev/null || echo 0)
+            if [ "$cur" = "$prev" ]; then
+                stable=$((stable + 1))
+                [ "$stable" -ge 2 ] && break
+            else
+                stable=0
+            fi
+            prev=$cur
+        done
+        OUTFILE="${OUTDIR}/${SESSION_ID}.txt"
+        TMPFILE=$(mktemp "${OUTFILE}.XXXXXX") || exit 0
+        if convert "$TRANSCRIPT_PATH" "$SESSION_ID" "$CWD" > "$TMPFILE"; then
+            chmod 664 "$TMPFILE"
+            mv -f "$TMPFILE" "$OUTFILE"
+        else
+            rm -f "$TMPFILE"
+        fi
+    ) </dev/null >/dev/null 2>&1 &
+    disown 2>/dev/null
 fi
