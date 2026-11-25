@@ -28,7 +28,17 @@ EOF
 
     jq -r '
       if .type == "user" and .userType == "external" then
-        if (.message | type) == "object" and (.message.content | type) == "string" then
+        # Skip user entries a person did not type: isMeta (skill bodies,
+        # system reminders, subagent hand-backs, local-command caveats) and,
+        # in transcripts that have origin.kind, anything but "human"
+        # (task notifications, peer messages). Tool results have no origin.
+        if .isMeta == true or ((.origin | type) == "object" and .origin.kind != null and .origin.kind != "human") then
+          empty
+        elif (.message | type) == "object" and (.message.content | type) == "string"
+             and (.message.content | test("^\\s*<local-command-")) then
+          # Output of a local command such as /add-dir or /effort.
+          empty
+        elif (.message | type) == "object" and (.message.content | type) == "string" then
           if (.message.content | test("<command-message>")) then
             (.message.content | capture("<command-message>(?<cmd>[^<]+)</command-message>")) as $m |
             if (.message.content | test("<command-args>")) then

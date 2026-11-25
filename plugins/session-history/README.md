@@ -40,7 +40,7 @@ Period: 2026-04-01 10:00 ~ 2026-04-02 15:30
      notes: user's additional comment
 ```
 
-- User messages: `❯` prefix
+- User messages: `❯` prefix. Only what a person typed: entries Claude Code inserts (`isMeta`, task notifications, subagent hand-backs, system reminders, local command output such as `/add-dir` or `/context`) are left out
 - Assistant text: `●` prefix
 - Tool calls: `[ToolName] argument`
 - Slash commands: converted to `❯ /command args` format
