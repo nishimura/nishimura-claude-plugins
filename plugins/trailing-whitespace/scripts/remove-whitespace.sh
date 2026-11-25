@@ -9,6 +9,10 @@ fi
 
 sort -u "$LISTFILE" | while read -r file; do
     if [ -f "$file" ]; then
+        # Skip binary and empty files (files changed by Bash are not always text)
+        if ! grep -Iq . "$file"; then
+            continue
+        fi
         # Remove trailing whitespace (only if found)
         if grep -qP '[[:space:]]+$' "$file"; then
             sed -i -E 's/[[:space:]]+$//' "$file"

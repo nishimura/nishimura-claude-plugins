@@ -15,13 +15,19 @@ Defer the cleanup to the `Stop` hook. Record file paths during editing, then pro
 ```
 UserPromptSubmit  -->  clear file list
         |
-PostToolUse(Edit/Write)  -->  record file path (no file modification)
+PostToolUse(Edit/Write/Bash)  -->  record file path (no file modification)
         |
 Stop / StopFailure  -->  grep check + sed trailing whitespace + ensure final newline
 ```
+
+A `PostToolUse` hook matching `Edit|Write` does not run when a Bash command
+(`sed -i`, heredoc, ...) rewrites a file, so `Bash` is matched too. The files a
+Bash command changed are read from `tool_response.bashEditDiff`
+(`changedFiles` / `files[].filePath`, Claude Code 2.1.269+).
 
 ## What it does
 
 - Removes trailing whitespace (`sed -E 's/[[:space:]]+$//'`)
 - Adds a final newline if missing
 - Only modifies files that actually have trailing whitespace (pre-checked with `grep`)
+- Skips binary and empty files
