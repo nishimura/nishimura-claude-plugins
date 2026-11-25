@@ -42,8 +42,26 @@ EOF
           else
             "\n❯ " + .message.content + "\n"
           end
+        elif (.message | type) == "object" and (.message.content | type) == "array"
+             and (.toolUseResult | type) == "object" and (.toolUseResult.answers | type) == "object" then
+          # AskUserQuestion answer: use the structured result. The tool_result
+          # text has changed without notice (e.g. "User has answered your
+          # questions:" -> "Your questions have been answered:"), so do not parse it.
+          .toolUseResult as $r |
+          ($r.answers // {}) as $ans |
+          ($r.annotations // {}) as $ann |
+          ([($r.questions // [])[] | .question | strings]) as $qs |
+          ($qs + ([$ans | keys_unsorted[]] - $qs)) as $order |
+          [ $order[] | . as $q | select($ans | has($q)) |
+            ($ans[$q] | if type == "array" then join(", ") else tostring end) as $a |
+            (($ann[$q] // {}) | if type == "object" then (.notes // "") else "" end | tostring) as $n |
+            "  Q: " + ($q | gsub("\r"; "\n")) + "\n  A: " + ($a | gsub("\r"; "\n"))
+              + (if $n != "" then "\n     notes: " + ($n | gsub("\r"; "\n")) else "" end)
+          ] |
+          if length > 0 then "\n[AskUserQuestion Answer]\n" + join("\n\n") + "\n" else empty end
         elif (.message | type) == "object" and (.message.content | type) == "array" then
           .message.content[] |
+          # Fallback for old transcripts without a structured toolUseResult.
           if (type == "object" and .type == "tool_result" and (.content | type) == "string" and (.content | test("^User has answered your questions:"))) then
             "\n[AskUserQuestion Answer]\n" + (
               .content
